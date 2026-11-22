@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>弹幕迁移工作台</title>
+    <script>
+      let theme = "light";
+      try {
+        if (localStorage.getItem("danmaku-workbench-theme") === "dark") theme = "dark";
+      } catch {
+        // Use the default theme when browser storage is unavailable.
+      }
+      document.documentElement.dataset.theme = theme;
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

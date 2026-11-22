@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+@property --night-mode {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+:root {
+  --night-canvas: #101826;
+  transition: --night-mode 320ms ease-in-out;
+}
+
+:root[data-theme="dark"] {
+  --night-mode: 100%;
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+}
+
+/* Interpolate the theme once so every surface, status and the cord stay in sync. */
+@theme inline {
+  --color-canvas: color-mix(in oklab, var(--color-slate-50), var(--night-canvas) var(--night-mode));
+  --color-panel: color-mix(in oklab, white, #182335 var(--night-mode));
+  --color-panel-muted: color-mix(in oklab, var(--color-slate-100), #222f44 var(--night-mode));
+  --color-scrim: color-mix(in oklab, rgb(15 23 42 / 40%), rgb(4 9 18 / 72%) var(--night-mode));
+  --color-line-subtle: color-mix(in oklab, var(--color-slate-100), #28364b var(--night-mode));
+  --color-line: color-mix(in oklab, var(--color-slate-200), #36455e var(--night-mode));
+  --color-line-strong: color-mix(in oklab, var(--color-slate-300), #5d708c var(--night-mode));
+  --color-ink: color-mix(in oklab, var(--color-slate-900), #eef3fb var(--night-mode));
+  --color-ink-body: color-mix(in oklab, var(--color-slate-800), #dce6f3 var(--night-mode));
+  --color-ink-secondary: color-mix(in oklab, var(--color-slate-700), #cedaeb var(--night-mode));
+  --color-ink-muted: color-mix(in oklab, var(--color-slate-600), #b4c4da var(--night-mode));
+  --color-ink-quiet: color-mix(in oklab, var(--color-slate-500), #a1b2ca var(--night-mode));
+  --color-idle: color-mix(in oklab, var(--color-slate-400), #8193ad var(--night-mode));
+
+  --color-action: color-mix(in oklab, var(--color-indigo-700), #4b55b3 var(--night-mode));
+  --color-action-hover: color-mix(in oklab, var(--color-indigo-800), #5661c4 var(--night-mode));
+  --color-accent: color-mix(in oklab, var(--color-indigo-700), #b9c5ff var(--night-mode));
+  --color-accent-strong: color-mix(in oklab, var(--color-indigo-800), #d5ddff var(--night-mode));
+  --color-accent-tint: color-mix(in oklab, var(--color-indigo-50), #242e4f var(--night-mode));
+  --color-accent-selected: color-mix(in oklab, var(--color-indigo-100), #303b64 var(--night-mode));
+  --color-accent-line: color-mix(in oklab, var(--color-indigo-200), #54659c var(--night-mode));
+  --color-accent-focus: color-mix(in oklab, var(--color-indigo-600), #9daeff var(--night-mode));
+  --color-accent-dot: color-mix(in oklab, var(--color-indigo-500), #9daeff var(--night-mode));
+  --color-review-focus: color-mix(in oklab, var(--color-blue-50), #233c59 var(--night-mode));
+
+  --color-success: color-mix(in oklab, var(--color-emerald-800), #93e5be var(--night-mode));
+  --color-success-tint: color-mix(in oklab, var(--color-emerald-50), #17372f var(--night-mode));
+  --color-success-line: color-mix(in oklab, var(--color-emerald-200), #376d5b var(--night-mode));
+  --color-success-dot: color-mix(in oklab, var(--color-emerald-600), #66d6a3 var(--night-mode));
+  --color-warning: color-mix(in oklab, var(--color-amber-900), #f6ce84 var(--night-mode));
+  --color-warning-tint: color-mix(in oklab, var(--color-amber-50), #352b20 var(--night-mode));
+  --color-warning-badge: color-mix(in oklab, var(--color-amber-100), #493620 var(--night-mode));
+  --color-warning-line: color-mix(in oklab, var(--color-amber-300), #84663d var(--night-mode));
+  --color-danger: color-mix(in oklab, var(--color-red-800), #ffc0cb var(--night-mode));
+  --color-danger-tint: color-mix(in oklab, var(--color-red-50), #3d2435 var(--night-mode));
+  --color-danger-line: color-mix(in oklab, var(--color-red-200), #805364 var(--night-mode));
+  --color-danger-dot: color-mix(in oklab, var(--color-rose-600), #ff94aa var(--night-mode));
+
+  --color-gxui-surface: color-mix(in oklab, var(--color-amber-100), var(--night-canvas) var(--night-mode));
+}
+
+.workbench {
+  --gxui-muted: color-mix(in oklab, var(--color-slate-500), #8193ad var(--night-mode));
+}
+
+@layer base {
+  *, ::before, ::after, ::backdrop, ::file-selector-button {
+    @apply border-line;
+  }
+  body {
+    @apply bg-canvas text-ink;
+  }
+  dialog {
+    margin: auto;
+    color: inherit;
+  }
+  input::placeholder, textarea::placeholder {
+    @apply text-ink-quiet;
+  }
+  :root[data-theme="dark"] :where(select option, select optgroup) {
+    background-color: Canvas;
+    color: CanvasText;
+  }
+  @supports (appearance: base-select) and selector(::picker(select)) {
+    :root[data-theme="dark"] :where(select:not([multiple], [size])) {
+      appearance: base-select;
+
+      &::picker(select) {
+        appearance: base-select;
+        position-try-order: normal;
+        max-block-size: min(18rem, calc((100dvb - anchor-size(block)) / 2 - 0.25rem));
+        @apply mt-1 rounded-md border border-line-strong bg-panel p-1 text-ink shadow-lg;
+      }
+      & :where(option, optgroup) {
+        @apply bg-panel text-ink;
+      }
+      & option {
+        @apply rounded-sm px-2 py-1.5;
+      }
+      & option:checked {
+        @apply bg-accent-selected text-accent-strong;
+      }
+      & option:not(:disabled):is(:hover, :focus-visible) {
+        @apply bg-panel-muted text-ink;
+      }
+      & option:disabled {
+        @apply text-ink-quiet;
+      }
+    }
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.delivery-list {
+  --delivery-windup: -0.875rem;
+  --delivery-wall: 1.25rem;
+  --delivery-fly-time: 135ms;
+  --delivery-withdraw-time: 200ms;
+  --delivery-rebound-time: 650ms;
+  --delivery-collapse-time: 220ms;
+  overflow-x: clip;
+  margin-inline: -0.875rem -1.25rem;
+}
+
+.delivery-list[data-account="primary"] {
+  --delivery-wall: 0.375rem;
+  margin-inline-end: calc(-1 * var(--delivery-wall));
+}
+
+.delivery-list[data-account="secondary"] {
+  margin-inline-start: 0;
+}
+
+.delivery-list[data-account="secondary"] .delivery-row-clip {
+  padding-inline-start: 0;
+}
+
+.delivery-row {
+  display: grid;
+  grid-template-rows: 1fr;
+  --delivery-start: 0px;
+}
+
+.delivery-row[data-from-sending="true"] {
+  --delivery-start: var(--delivery-windup);
+}
+
+.delivery-row-clip {
+  min-height: 0;
+  overflow: clip;
+  padding-inline: 0.875rem var(--delivery-wall);
+}
+
+.delivery-card {
+  position: relative;
+  isolation: isolate;
+  transform-origin: right center;
+  transition: transform 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out;
+}
+
+.delivery-row:not(:last-child) .delivery-card {
+  margin-block-end: var(--delivery-row-gap);
+}
+
+.delivery-card[data-sending="true"] {
+  transform: translateX(var(--delivery-windup));
+  @apply border-accent-line bg-accent-tint;
+}
+
+.delivery-row[data-motion] .delivery-card {
+  transition-property: border-color, background-color;
+}
+
+.delivery-row[data-motion="sent"] {
+  animation: delivery-collapse var(--delivery-collapse-time) ease-in-out 55ms both;
+}
+
+.delivery-row[data-motion="sent"] .delivery-card {
+  animation: delivery-fly var(--delivery-fly-time) linear both;
+}
+
+.delivery-row[data-motion="withdrawn"]:where([data-stays="false"]) {
+  animation: delivery-collapse var(--delivery-collapse-time) ease-in-out 65ms both;
+}
+
+.delivery-row[data-motion="withdrawn"] .delivery-card {
+  animation: delivery-withdraw var(--delivery-withdraw-time) ease-in both;
+}
+
+.delivery-row[data-motion="failed"] {
+  animation: delivery-collapse var(--delivery-collapse-time) ease-in-out var(--delivery-rebound-time) both;
+}
+
+.delivery-row[data-motion="failed"] .delivery-card,
+.delivery-row[data-motion="returned"] .delivery-card {
+  animation: delivery-rebound var(--delivery-rebound-time) ease-out both;
+}
+
+.delivery-dizzy {
+  --delivery-dizzy-opacity: 0.32;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: url("./assets/delivery-dizzy-pattern.png");
+  background-size: 232px 110px;
+  filter: brightness(calc(100% + var(--night-mode) * 0.8));
+  opacity: var(--delivery-dizzy-opacity);
+  pointer-events: none;
+}
+
+.delivery-row[data-was-dizzy="true"] .delivery-dizzy {
+  --delivery-dizzy-start-opacity: var(--delivery-dizzy-opacity);
+}
+
+.delivery-row:is([data-motion="failed"], [data-motion="returned"]) .delivery-dizzy {
+  animation: delivery-dizzy-enter var(--delivery-rebound-time) ease-out both;
+}
+
+.delivery-row[data-motion="sent"] .delivery-dizzy {
+  animation: delivery-dizzy-exit var(--delivery-fly-time) linear both;
+}
+
+@keyframes delivery-fly {
+  0% { transform: translateX(var(--delivery-start)); }
+  16% {
+    transform: translateX(var(--delivery-windup));
+    animation-timing-function: cubic-bezier(0.4, 0, 0.8, 0.5);
+  }
+  100% { transform: translateX(calc(100% + var(--delivery-wall))); }
+}
+
+@keyframes delivery-withdraw {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - 0.875rem)); }
+}
+
+@keyframes delivery-rebound {
+  0% { transform: translateX(var(--delivery-start)); }
+  12% {
+    transform: translateX(var(--delivery-windup));
+    animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.4);
+  }
+  22% { transform: translateX(var(--delivery-wall)); }
+  27% { transform: translateX(var(--delivery-wall)) scaleX(0.82); }
+  40% { transform: translateX(-0.75rem); }
+  53% { transform: translateX(0.625rem) scaleX(0.95); }
+  67% { transform: translateX(-0.375rem) scaleX(1.01); }
+  81% { transform: translateX(0.1875rem) scaleX(0.985); }
+  92% { transform: translateX(-0.0625rem) scaleX(1.005); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+
+@keyframes delivery-dizzy-enter {
+  0%, 22% { opacity: var(--delivery-dizzy-start-opacity, 0); }
+  38% { opacity: var(--delivery-dizzy-opacity); background-position: -4px 2px; }
+  62% { background-position: 2px -1px; }
+  100% { opacity: var(--delivery-dizzy-opacity); background-position: 0 0; }
+}
+
+@keyframes delivery-dizzy-exit {
+  16% { opacity: var(--delivery-dizzy-opacity); }
+  100% { opacity: 0; }
+}
+
+@keyframes delivery-collapse {
+  from { grid-template-rows: 1fr; }
+  to { grid-template-rows: 0fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delivery-card {
+    transition: none;
+  }
+
+  .delivery-card[data-sending="true"] {
+    transform: none;
+  }
+
+  .delivery-row[data-motion], .delivery-row[data-motion] .delivery-card {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .delivery-row[data-motion] .delivery-dizzy {
+    animation-duration: 1ms;
+  }
+}
+
+@layer components {
+  .field {
+    @apply grid min-w-0 gap-1 text-sm font-medium;
+  }
+  .field input:not([type="file"]), .field select, .field textarea {
+    @apply w-full rounded-md border border-line-strong px-2.5 py-2;
+  }
+  .primary, .secondary {
+    @apply rounded-md px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .primary {
+    @apply bg-action text-white hover:bg-action-hover;
+  }
+  .secondary {
+    @apply border border-line-strong bg-panel hover:bg-panel-muted;
+  }
+  .list-button {
+    @apply flex w-full flex-wrap items-center justify-between gap-2 rounded-md border border-line
+      bg-panel px-3 py-2 text-left text-sm hover:bg-canvas aria-pressed:border-accent-focus
+      aria-pressed:bg-accent-tint;
+  }
+  .project-card-select {
+    @apply pr-10;
+  }
+  .project-card-menu {
+    @apply absolute right-1 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded
+      text-xl leading-none text-ink-muted hover:bg-accent-selected hover:text-accent disabled:opacity-50;
+  }
+  .project-menu-item {
+    @apply rounded px-2.5 py-2 text-left text-sm hover:bg-panel-muted disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .workflow-panel {
+    @apply min-w-0 space-y-3 rounded-lg border border-line bg-panel p-3 sm:p-4;
+  }
+  .workflow-tab {
+    @apply grid gap-1 rounded-lg border px-3 py-2.5 text-left text-sm font-semibold sm:px-4
+      aria-pressed:ring-2 aria-pressed:ring-accent-focus aria-pressed:ring-offset-1 aria-pressed:ring-offset-panel
+      disabled:cursor-not-allowed disabled:border-line disabled:bg-panel-muted disabled:text-ink-quiet;
+  }
+  .workflow-done {
+    @apply rounded-lg border border-success-line bg-success-tint px-3 py-2.5 text-sm font-semibold text-success sm:px-4;
+  }
+  .workflow-current {
+    @apply border-accent-line bg-accent-tint text-accent-strong;
+  }
+  .workflow-available {
+    @apply border-line bg-panel text-ink-body;
+  }
+  .analysis-terminal {
+    @apply min-w-0 overflow-hidden rounded-lg border border-line bg-panel;
+  }
+  .analysis-terminal-bar {
+    @apply flex items-center justify-between gap-3 border-b border-line bg-canvas px-4 py-2.5;
+  }
+  .analysis-terminal-content {
+    @apply h-[clamp(15rem,42vh,27rem)] space-y-5 overflow-auto overscroll-contain p-4
+      focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent-focus;
+  }
+  .analysis-terminal-label {
+    @apply mb-2 text-xs font-semibold text-ink-secondary;
+  }
+  .analysis-terminal-text {
+    @apply whitespace-pre-wrap break-words text-xs leading-relaxed sm:text-sm sm:leading-relaxed;
+    overflow-wrap: anywhere;
+  }
+}
+
+.workbench[data-backend="disconnected"] :is([role="alert"].text-danger, [data-backend-notice]) {
+  display: none;
+}
+.help-button { display: inline-grid; place-items: center; width: 1.2em; height: 1.2em; border: 1px solid var(--color-line-strong); border-radius: 0.25rem; font-size: inherit; line-height: 1; }
+.help-button:hover { background: var(--color-panel-muted); }
+.input-type-menu { position: relative; min-width: 5rem; }
+.input-type-menu summary { cursor: pointer; list-style: none; border: 1px solid var(--color-line-strong); border-radius: 0.375rem; background: var(--color-panel); padding: 0.5rem 1.8rem 0.5rem 0.75rem; }
+.input-type-menu summary::-webkit-details-marker { display: none; }
+.input-type-menu summary::after { content: "▾"; position: absolute; right: 0.7rem; }
+.input-type-menu summary[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.input-type-options { position: absolute; z-index: 20; top: 100%; left: 0; min-width: 100%; border: 1px solid var(--color-line-strong); border-radius: 0.375rem; background: var(--color-panel); box-shadow: 0 4px 10px #0002; }
+.input-type-options > span, .input-type-options button { display: block; width: 100%; }
+.input-type-options button { padding: 0.4rem 0.75rem; text-align: left; }
+.input-type-options button:hover, .input-type-options button:focus-visible { background: var(--color-accent-tint); }
