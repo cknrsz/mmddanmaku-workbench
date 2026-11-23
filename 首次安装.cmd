@@ -2,24 +2,17 @@
 setlocal
 cd /d "%~dp0"
 echo Checking for Python 3.12 or newer...
-if not exist "backend\pyproject.toml" (
-    echo Extract the whole ZIP before running this script.
-    goto failed
-)
-if exist ".venv\Scripts\python.exe" goto check_venv
-set "PYTHON_CMD="
-py -3.12 -c "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>&1 && set "PYTHON_CMD=py -3.12"
-if not defined PYTHON_CMD py -3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>&1 && set "PYTHON_CMD=py -3"
-if not defined PYTHON_CMD python -c "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>&1 && set "PYTHON_CMD=python"
-if not defined PYTHON_CMD (
+py -3 -c "import sys; sys.exit(sys.version_info ^< (3, 12))" >nul 2>&1
+if errorlevel 1 (
     echo Python 3.12 or newer was not found. Install it from https://www.python.org/downloads/windows/ and run this script again.
     pause
     exit /b 1
 )
-%PYTHON_CMD% -m venv .venv
-if errorlevel 1 goto failed
-:check_venv
-".venv\Scripts\python.exe" -c "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)"
+if not exist ".venv\Scripts\python.exe" (
+    py -3 -m venv .venv
+    if errorlevel 1 goto failed
+)
+".venv\Scripts\python.exe" -c "import sys; sys.exit(sys.version_info ^< (3, 12))"
 if errorlevel 1 (
     echo The existing .venv requires Python 3.12 or newer. Remove or replace it and retry.
     goto failed

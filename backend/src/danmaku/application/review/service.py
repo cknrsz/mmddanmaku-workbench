@@ -7,6 +7,7 @@ from danmaku.application.pagination import decode_cursor, encode_cursor
 from danmaku.application.ports import Repository
 from danmaku.application.projects import require_project
 from danmaku.domain.analysis import AnalysisRun
+from danmaku.domain.inputs import Cue
 from danmaku.domain.review import (
     ReviewChange, ReviewCommit, ReviewFilter, ReviewOffset, ReviewPage, ReviewRevision, ReviewRow, ReviewText,
 )
@@ -65,6 +66,12 @@ class ReviewService:
 
         cues.sort(key=lambda cue: (cue.start_ms, cue.order))
         cues_by_id = {cue.id: cue for cue in cues}
+        # Older single-track runs use IDs without a language prefix.
+        unique_cues: dict[tuple[str, int, int, str], Cue] = {}
+        for cue in cues:
+            track = cue.id.rpartition(":")[0]
+            unique_cues.setdefault((track, cue.start_ms, cue.end_ms, cue.plaintext), cue)
+        cues = list(unique_cues.values())
         starts = [cue.start_ms for cue in cues]
         # Prefix maximum end times retain long cues that overlap later dialogue.
         max_ends: list[int] = []

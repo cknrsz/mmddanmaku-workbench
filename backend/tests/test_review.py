@@ -8,7 +8,7 @@ import pytest
 from danmaku.domain.analysis import Classification
 from danmaku.persistence.analysis_repository import AnalysisRunRow, ClassificationRow
 from danmaku.persistence.input_rows import SourceItemRow
-from test_analysis import LABELED, RecordingModel, app_with_inputs, classify, prepare, results, source
+from test_analysis import LABELED, RecordingModel, app_with_inputs, classify, prepare, results, source, upload_subtitle
 from test_workbench import API, create_project, download, open_client, connect_session, wait_task
 
 
@@ -102,6 +102,86 @@ def test_review_text_persists_and_is_used_for_search_and_preview(tmp_path):
         command["text"] = None
         assert client.patch(f"{endpoint}/text", json=command, headers=headers).json()["revision"] == 2
         assert get_review(client, endpoint, run)["items"] == [item]
+
+
+@pytest.mark.parametrize("format, ass_content, legacy", [
+    ("ass", True, False),
+    ("txt", True, False),
+    ("srt", False, False),
+    ("txt", False, False),
+    ("srt", False, True),
+])
+def test_nearby_subtitles_deduplicate_by_track_exact_range_and_plaintext(tmp_path, format, ass_content, legacy):
+    same = "合成台词"
+    styled = r"{\i1}合成台词{\i0}" if ass_content else "<i>合成台词</i>"
+    dialogues = [
+        (1000, 3000, same),
+        (1000, 3000, "另一行"),
+        *[(1000, 3000, styled)] * 12,
+        (1000, 3010, same),
+        (1010, 3000, same),
+        (1000, 3000, "合成台词！"),
+        (3000, 4000, same),
+        (7000, 8000, "窗口边界"),
+        (7010, 8000, "窗口之外"),
+    ]
+    if ass_content:
+        subtitle = "[Events]\n" + "\n".join(
+            f"Dialogue: {index % 2},0:00:{start // 1000:02}.{start % 1000 // 10:02},"
+            f"0:00:{end // 1000:02}.{end % 1000 // 10:02},Style{index % 2},,0,0,0,,{value}"
+            for index, (start, end, value) in enumerate(dialogues)
+        )
+    else:
+        subtitle = "\r\n\r\n".join(
+            f"{index}\r\n00:00:{start // 1000:02},{start % 1000:03} --> "
+            f"00:00:{end // 1000:02},{end % 1000:03}\r\n{value}"
+            for index, (start, end, value) in enumerate(dialogues, start=1)
+        )
+
+    with app_with_inputs(tmp_path, [source(same, 2000, 0)]) as client:
+        headers = connect_session(client)
+        project = create_project(client, headers)
+        project_url = f"{API}/projects/{project}"
+        snapshot = download(client, project, headers).json()["id"]
+        wait_task(client, snapshot, "succeeded")
+        upload = client.post(
+            f"{project_url}/subtitles", params={"format": format},
+            content=subtitle.encode(), headers={**headers, "Content-Type": "application/octet-stream"},
+        )
+        assert upload.status_code == 201, upload.text
+        assert upload.json()["cue_count"] == len(dialogues)
+        body = {"kind": "classify", "snapshot_id": snapshot,
+                "subtitle_version_id": upload.json()["subtitle_version_id"], "llm_config_version": 0}
+        if not legacy:
+            body["japanese_subtitle_version_id"] = upload_subtitle(
+                client, project, headers, [(1, 3, same), (1, 3, f"<i>{same}</i>")], "japanese.srt",
+            )
+        run = classify(client, project, body, headers).json()["id"]
+        wait_task(client, run, "succeeded")
+
+        prefix = "" if legacy else "zh:"
+        citation = f"{prefix}c3"
+        with client.app.state.review.database(write=True) as repository:
+            if legacy:
+                stored_run = repository.session.get(AnalysisRunRow, run)
+                stored_run.inputs = {**stored_run.inputs, "strategy": "full"}
+            [item] = repository.analysis_source_items(snapshot)
+            stored = repository.session.get(ClassificationRow, (run, item.source_key))
+            stored.result = {**stored.result, "cue_ids": [citation]}
+
+        [row] = get_review(client, f"{project_url}/review", run)["items"]
+        nearby = row["nearby_cues"]
+        assert [cue["id"] for cue in nearby] == [
+            f"{prefix}c1", *([] if legacy else ["ja:c1"]), f"{prefix}c2",
+            f"{prefix}c15", f"{prefix}c17", f"{prefix}c16", f"{prefix}c18", f"{prefix}c19",
+        ]
+        assert [(cue["start_ms"], cue["end_ms"], cue["plaintext"]) for cue in nearby if cue["id"].startswith(prefix)
+                and not cue["id"].startswith("ja:")] == [
+            (1000, 3000, same), (1000, 3000, "另一行"), (1000, 3010, same), (1000, 3000, "合成台词！"),
+            (1010, 3000, same), (3000, 4000, same), (7000, 8000, "窗口边界"),
+        ]
+        assert row["classification"]["cue_ids"] == [citation]
+        assert [(cue["id"], cue["plaintext"]) for cue in row["evidence_cues"]] == [(citation, same)]
 
 
 def test_review_filters_evidence_and_run_isolation(tmp_path):

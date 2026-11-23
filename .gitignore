@@ -19,3 +19,8 @@ coverage/
 /danmaku-workbench-windows.zip
 /frontend/public/yukkuri/*
 !/frontend/public/yukkuri/setup-yukkuri-assets.cmd
+
+build-release.cmd
+publish-source.cmd
+publish-source.ps1
+一键上传-使用说明.txt
